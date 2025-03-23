@@ -10,9 +10,7 @@ async function checkInteraction() {
 
   try {
     const response = await fetch(
-      `https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${encodeURIComponent(
-        drugName
-      )}"&limit=1`
+      `http://localhost:5500/interactions?drug=${encodeURIComponent(drugName)}`
     );
 
     if (!response.ok) {
@@ -22,20 +20,14 @@ async function checkInteraction() {
 
     const data = await response.json();
 
-    if (
-      !data.results ||
-      data.results.length === 0 ||
-      !data.results[0].warnings
-    ) {
+    if (!data.warnings || data.warnings.length === 0) {
       resultDiv.innerHTML = "<p>No known interactions found.</p>";
       return;
     }
 
-    const warnings = data.results[0].warnings.join("<br><br>");
-
     resultDiv.innerHTML = `
       <p><strong>Potential Interactions & Warnings:</strong></p>
-      <p>${warnings}</p>
+      <p>${data.warnings.join("<br><br>")}</p>
     `;
   } catch (error) {
     console.error("Error fetching data:", error);
