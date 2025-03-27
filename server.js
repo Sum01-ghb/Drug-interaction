@@ -2,22 +2,42 @@ import express from "express";
 import axios from "axios";
 import cors from "cors";
 import dotenv from "dotenv";
-import { OpenAI } from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const openai = new OpenAI(process.env.OPENAI_API_KEY);
+const API_KEY = process.env.API_KEY;
+
+if (!API_KEY) {
+  console.error("Missing API Key. Please set API_KEY in .env file.");
+  process.exit(1);
+}
+
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 app.use(cors());
 app.use(express.json());
 
+app.get("/list-models", async (req, res) => {
+  try {
+    const models = [
+      { name: "gemini-pro", description: "AI model for text-based tasks." },
+      { name: "gemini-pro-vision", description: "AI model for text + images." },
+      { name: "gemini-1.5-pro", description: "Advanced text-based AI model." },
+    ];
+    res.json({ models });
+  } catch (error) {
+    console.error("Error fetching models:", error.message);
+    res.status(500).json({ error: "Failed to fetch model list." });
+  }
+});
+
 app.get("/interactions", async (req, res) => {
   const { drug } = req.query;
-  if (!drug) {
+  if (!drug)
     return res.status(400).json({ error: "Please provide a drug name" });
-  }
 
   try {
     const response = await axios.get(
@@ -35,7 +55,7 @@ app.get("/interactions", async (req, res) => {
     ];
     res.json({ drug, warnings });
   } catch (error) {
-    console.error("Error fetching data", error);
+    console.error("Error fetching data:", error.message);
     res
       .status(500)
       .json({ error: "Failed to fetch data. Please try again later" });
@@ -44,26 +64,33 @@ app.get("/interactions", async (req, res) => {
 
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
-  if (!message) {
-    return res.status(400).json({ error: "Message is required" });
-  }
+  if (!message) return res.status(400).json({ error: "Message is required" });
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: message }],
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
+    const response = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: message }] }],
     });
 
-    res.json({ reply: response.choices[0].message.content });
+    //console.log("AI Response:", response);
+    //console.log("Full AI Response:", JSON.stringify(response, null, 2));
+
+    const reply =
+      response?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response from AI.";
+
+    res.json({ reply });
   } catch (error) {
-    console.error(
-      "Error with AI chatbot:",
-      error.response ? error.response.data : error.message
-    );
-    res.status(500).json({ error: "Failed to process chat request" });
+    console.error("Error with AI chatbot:", error);
+    res.status(500).json({
+      error: "Failed to process chat request",
+      details: error.message,
+    });
   }
 });
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+console.log("API Key Loaded:", process.env.API_KEY ? "Yes" : "No");
