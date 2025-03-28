@@ -34,3 +34,33 @@ async function checkInteraction() {
     resultDiv.innerHTML = "<p>Error fetching data. Please try again later.</p>";
   }
 }
+
+async function chatWithAi() {
+  const userMessage = document.getElementById("chatInput").value.trim();
+  if (!userMessage) {
+    alert("Please enter a message.");
+    return;
+  }
+
+  const chatBox = document.getElementById("chatBox");
+  chatBox.innerHTML += `<div class="user-message"><strong>You:</strong>${userMessage}</div>`;
+
+  try {
+    const response = await fetch("http://localhost:5500/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: userMessage }),
+    });
+
+    const data = await response.json();
+    const aiReply = data.reply || "No response from AI.";
+    chatBox.innerHTML += `<div class="ai-message"><strong>AI:</strong>${aiReply}</div>`;
+  } catch (error) {
+    console.error("Error with AI chatbot:", error);
+    chatBox.innerHTML += `<div class="error-message"><strong>Error:</strong>Failed to communicate with AI.</div>`;
+  }
+
+  document.getElementById("chatInput").value = "";
+}

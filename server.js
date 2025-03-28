@@ -20,19 +20,19 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 app.use(cors());
 app.use(express.json());
 
-app.get("/list-models", async (req, res) => {
-  try {
-    const models = [
-      { name: "gemini-pro", description: "AI model for text-based tasks." },
-      { name: "gemini-pro-vision", description: "AI model for text + images." },
-      { name: "gemini-1.5-pro", description: "Advanced text-based AI model." },
-    ];
-    res.json({ models });
-  } catch (error) {
-    console.error("Error fetching models:", error.message);
-    res.status(500).json({ error: "Failed to fetch model list." });
-  }
-});
+// app.get("/list-models", async (req, res) => {
+//   try {
+//     const models = [
+//       { name: "gemini-pro", description: "AI model for text-based tasks." },
+//       { name: "gemini-pro-vision", description: "AI model for text + images." },
+//       { name: "gemini-1.5-pro", description: "Advanced text-based AI model." },
+//     ];
+//     res.json({ models });
+//   } catch (error) {
+//     console.error("Error fetching models:", error.message);
+//     res.status(500).json({ error: "Failed to fetch model list." });
+//   }
+// });
 
 app.get("/interactions", async (req, res) => {
   const { drug } = req.query;
